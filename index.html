@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Keza Patronaje</title>
+<link rel="icon" href="kezaLogo.png">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+<style id="pagestyle">@page { size: 21cm 29.7cm; margin: 1cm; }</style>
+<style>
+  :root { --bg:#faf7f2; --panel:#fff; --ink:#141414; --muted:#6b6670; --line:#e8e1ec;
+    --magenta:#E5177E; --teal:#14B3C2; --purple:#7A3CB0; --yellow:#F6B600; --cream:#F3DDB3;
+    --accent:var(--magenta); --piece:#FBF3E4; --warn:#E5177E; --ok:#0E9AA8;
+    --stripe:linear-gradient(90deg,var(--magenta),var(--teal),var(--purple),var(--yellow)); }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+  #app { display:grid; grid-template-columns: 330px 1fr; min-height:calc(100vh - 52px); }
+  aside, .dpanel { background:var(--panel); border-right:1px solid var(--line); padding:16px; overflow-y:auto; max-height:calc(100vh - 52px); position:sticky; top:52px; }
+  /* Pestañas */
+  #tabs { position:sticky; top:0; z-index:20; height:52px; display:flex; align-items:center; gap:6px; padding:0 16px; background:#141414; }
+  #tabs::after { content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:var(--stripe); }
+  #tabs button { background:transparent; color:#fff; font-family:"Permanent Marker", sans-serif; font-size:16px; padding:6px 16px; }
+  #tabs button.active { background:var(--magenta); }
+  #tabs .brand { margin-left:auto; color:#fff; font-family:"Permanent Marker", sans-serif; font-size:15px; opacity:.85; }
+  /* Diseño */
+  #diseno { display:none; grid-template-columns:310px 1fr; min-height:calc(100vh - 52px); }
+  #diseno.on { display:grid; }
+  #medias { display:none; grid-template-columns:310px 1fr; min-height:calc(100vh - 52px); }
+  #medias.on { display:grid; }
+  #medias .row input[type=range] { width:150px; padding:0; }
+  #mCtrl.off, #mPatCtrl.off { opacity:.4; pointer-events:none; }
+  .mcard { width:min(980px,100%); }
+  .mcard svg { width:100%; height:auto; display:block; touch-action:none; user-select:none; }
+  @media (max-width: 800px) { #medias.on { grid-template-columns:1fr; } }
+  #diseno .row input[type=range] { width:150px; padding:0; }
+  .swatches { display:flex; flex-wrap:wrap; gap:8px; }
+  .sw { width:30px; height:30px; border-radius:50%; border:2px solid #ddd; cursor:pointer; padding:0; }
+  .sw.on { outline:3px solid var(--magenta); outline-offset:2px; }
+  .vbtns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .vbtns button { background:#fff; color:var(--ink); border:2px solid var(--line); }
+  .vbtns button.on { border-color:var(--purple); background:var(--purple); color:#fff; }
+  .upload { display:block; text-align:center; background:var(--teal); color:#fff; padding:10px; border-radius:6px; cursor:pointer; font-weight:600; }
+  #dList { margin:8px 0; display:flex; flex-direction:column; gap:4px; }
+  .lay { display:flex; align-items:center; gap:8px; padding:4px; border:2px solid var(--line); border-radius:6px; cursor:pointer; font-size:12px; }
+  .lay.on { border-color:var(--magenta); }
+  .lay img { width:34px; height:34px; object-fit:contain; background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/10px 10px; border-radius:4px; }
+  .lay span { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .btns { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+  .btns button, .dpanel > button { padding:6px 10px; }
+  .dpanel > button { width:100%; margin-bottom:6px; }
+  .chk { font-size:13px; display:flex; gap:6px; align-items:center; }
+  #dCtrl.off { opacity:.4; pointer-events:none; }
+  .stage { position:relative; display:flex; align-items:center; justify-content:center; padding:24px; perspective:1400px; overflow:hidden;
+    background:radial-gradient(circle at 50% 38%, #fff 0, #f4eef6 55%, #e9e1ee 100%); }
+  .card { width:min(600px,100%); transform-style:preserve-3d; will-change:transform; }
+  .card svg { width:100%; height:auto; display:block; touch-action:none; user-select:none; }
+  .vlabel { position:absolute; top:14px; left:18px; font-family:"Permanent Marker", sans-serif; font-size:20px; color:var(--purple); }
+  .dhint { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); background:rgba(20,20,20,.75); color:#fff; padding:6px 14px; border-radius:20px; font-size:13px; pointer-events:none; }
+  .stage.drop { outline:4px dashed var(--teal); outline-offset:-12px; }
+  .fcard { position:relative; width:min(640px,100%); }
+  .fcard canvas { width:100%; height:auto; display:block; border-radius:8px; box-shadow:0 12px 34px rgba(0,0,0,.18); }
+  .fcard svg { position:absolute; inset:0; width:100%; height:100%; touch-action:none; user-select:none; }
+  .floading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:"Permanent Marker",sans-serif; color:var(--purple); }
+  #fotoSel { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .ft { background:#fff; color:var(--ink); border:2px solid var(--line); padding:4px; font-size:12px; }
+  .ft img { width:100%; height:84px; object-fit:cover; border-radius:4px; display:block; margin-bottom:3px; }
+  .ft.on { border-color:var(--magenta); }
+  .ftadd { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:110px; cursor:pointer; border-style:dashed; border-color:var(--teal); color:var(--teal); font-weight:600; border-radius:6px; text-align:center; }
+  .ftadd small { font-weight:400; color:var(--muted); font-size:11px; margin-top:4px; }
+  .ftdel { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; background:rgba(20,20,20,.75); color:#fff; font-size:12px; line-height:22px; text-align:center; cursor:pointer; }
+  @media (max-width: 800px) { #diseno.on { grid-template-columns:1fr; } .dpanel { position:static; max-height:none; } }
+  aside::before { content:""; display:block; height:6px; margin:-16px -16px 14px; background:var(--stripe); }
+  .logo { display:block; width:170px; max-width:100%; margin:0 auto 6px; }
+  h1 { font-family:"Permanent Marker", "Segoe UI", sans-serif; font-weight:400; font-size:22px; margin:0 0 12px; text-align:center; }
+  h1 span { color:var(--magenta); }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:var(--purple); margin:18px 0 8px; border-bottom:2px solid; border-image:var(--stripe) 1; padding-bottom:4px; }
+  .row input:focus, .row select:focus { outline:2px solid var(--teal); border-color:var(--teal); }
+  button.b2 { background:var(--purple); }
+  button.sec { background:#fff; color:var(--teal); border:2px solid var(--teal); }
+  button:hover { filter:brightness(1.08); }
+  /* Calle con perrito y gato */
+  .street { position:relative; height:78px; margin:-4px 0 10px; overflow:hidden; }
+  .street::after { content:""; position:absolute; left:0; right:0; bottom:6px; height:4px; border-radius:2px; background:var(--stripe); opacity:.8; }
+  .walkers { position:absolute; bottom:8px; display:flex; align-items:flex-end; gap:6px; animation:walk 26s linear infinite; }
+  .street:hover .walkers, .street:hover .walkers * { animation-play-state:paused; }
+  .walkers svg { display:block; }
+  .bob { animation:bob .5s ease-in-out infinite alternate; }
+  .leg { transform-box:fill-box; transform-origin:50% 0; animation:step .5s ease-in-out infinite alternate; }
+  .leg.b { animation-direction:alternate-reverse; }
+  .tail { transform-box:fill-box; transform-origin:100% 100%; animation:wag .4s ease-in-out infinite alternate; }
+  .cattail { transform-box:fill-box; transform-origin:100% 100%; animation:wag 1.2s ease-in-out infinite alternate; }
+  .bubble { position:absolute; top:4px; font:12px "Permanent Marker", sans-serif; color:var(--purple); white-space:nowrap; animation:walk 26s linear infinite; }
+  @keyframes walk { from { left:-260px; } to { left:100%; } }
+  @keyframes step { from { transform:rotate(-22deg); } to { transform:rotate(22deg); } }
+  @keyframes bob { from { transform:translateY(0); } to { transform:translateY(-2px); } }
+  @keyframes wag { from { transform:rotate(-12deg); } to { transform:rotate(14deg); } }
+  @media (prefers-reduced-motion: reduce) { .walkers, .bubble { animation:none; left:20px; } .leg, .bob, .tail, .cattail { animation:none; } }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:5px 0; font-size:13px; }
+  .row label { flex:1; }
+  .row input, .row select { width:90px; padding:4px 6px; border:1px solid var(--line); border-radius:4px; font-size:13px; text-align:right; }
+  .row select { width:130px; text-align:left; }
+  .hint { font-size:11px; color:var(--muted); margin:2px 0 6px; }
+  main { padding:16px; min-width:0; }
+  #toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; align-items:center; }
+  button { background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:6px; font-size:13px; cursor:pointer; }
+  button.sec { background:#fff; color:var(--teal); border:2px solid var(--teal); }
+  #preview { background:#fff; border:1px solid var(--line); border-top:4px solid var(--magenta); border-radius:8px; padding:8px; }
+  #preview svg { width:100%; height:auto; display:block; }
+  #checks { margin-top:12px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:12px 16px; font-size:13px; }
+  #checks table { border-collapse:collapse; width:100%; }
+  #checks td { padding:4px 6px; border-bottom:1px solid #eee; }
+  #checks td.v { text-align:right; font-variant-numeric:tabular-nums; }
+  .ok { color:var(--ok); } .warn { color:var(--warn); font-weight:600; }
+  .pieces { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; }
+  .cut { fill:var(--piece); stroke:#000; stroke-width:.05; }
+  .stitch { fill:none; stroke:#555; stroke-width:.025; stroke-dasharray:.3 .2; }
+  .fold { stroke:#000; stroke-width:.08; stroke-dasharray:1 .3 .2 .3; }
+  .grain { stroke:#000; stroke-width:.04; fill:none; }
+  .lbl { font-family: system-ui, sans-serif; fill:#000; }
+  #print { display:none; }
+  @media (max-width: 800px) { #app { grid-template-columns:1fr; } aside { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line);} }
+  @media print {
+    #app, #tabs, #diseno, #medias { display:none !important; }
+    #print { display:block; }
+    body { background:#fff; }
+    .page { break-after:page; page-break-after:always; overflow:hidden; }
+    .page:last-child { break-after:auto; page-break-after:auto; }
+    .page svg { display:block; }
+    .cut { fill:none; }
+  }
+</style>
+</head>
+<body>
+<nav id="tabs">
+  <button data-tab="patron" class="active">Patrón</button>
+  <button data-tab="diseno">Diseño</button>
+  <span class="brand">KEZA Urban</span>
+</nav>
+<div id="app">
+  <aside>
+    <img class="logo" src="kezaLogo.png" alt="Keza Urban">
+    <h1>Patronaje · <span id="titulo">Hoodie</span></h1>
+    <h2>Prenda y talla</h2>
+    <div class="row"><label>Prenda</label><select id="prenda"><option value="h">Hoodie</option><option value="t">Camiseta</option></select></div>
+    <div class="row"><label>Tabla</label><select id="tabla"><option value="H">Hombres</option><option value="D">Damas</option></select></div>
+    <div class="row"><label>Talla</label><select id="talla"></select></div>
+    <div class="hint">Elegir talla rellena las medidas. Después puedes editar cualquier valor (medida personal).</div>
+    <div id="form"></div>
+  </aside>
+  <main>
+    <div class="street" aria-hidden="true">
+      <div class="walkers">
+        <!-- Gatito tuxedo -->
+        <svg width="96" height="64" viewBox="0 0 110 74">
+          <path class="cattail" d="M22 44 C8 40 6 22 14 12" fill="none" stroke="#111" stroke-width="6" stroke-linecap="round"/>
+          <g class="leg b"><rect x="26" y="48" width="7" height="20" rx="3.5" fill="#111"/><rect x="26" y="63" width="7" height="6" rx="3" fill="#fff"/></g>
+          <g class="leg"><rect x="36" y="48" width="7" height="20" rx="3.5" fill="#111"/><rect x="36" y="63" width="7" height="6" rx="3" fill="#fff"/></g>
+          <g class="leg"><rect x="62" y="48" width="7" height="20" rx="3.5" fill="#111"/><rect x="62" y="63" width="7" height="6" rx="3" fill="#fff"/></g>
+          <g class="leg b"><rect x="72" y="48" width="7" height="20" rx="3.5" fill="#111"/><rect x="72" y="63" width="7" height="6" rx="3" fill="#fff"/></g>
+          <g class="bob">
+            <ellipse cx="50" cy="44" rx="30" ry="13" fill="#111"/>
+            <ellipse cx="60" cy="51" rx="16" ry="6" fill="#fff"/>
+            <path d="M74 22 L76 4 L88 16 Z" fill="#111"/><path d="M76.5 18 L77.5 9 L84 15 Z" fill="#f4a7b9"/>
+            <path d="M92 16 L100 2 L104 20 Z" fill="#111"/><path d="M95 16 L99.5 8 L101.5 18 Z" fill="#f4a7b9"/>
+            <circle cx="88" cy="30" r="15" fill="#111"/>
+            <path d="M88 26 C94 26 103 30 102 38 C100 45 82 45 79 40 C80 33 84 27 88 26 Z" fill="#fff"/>
+            <ellipse cx="91" cy="27" rx="3.6" ry="4.2" fill="#e9d36b"/><circle cx="92" cy="27.5" r="2.2" fill="#111"/><circle cx="92.8" cy="26.4" r=".8" fill="#fff"/>
+            <path d="M99 33 l3 0 l-1.5 2 z" fill="#f08aa6"/>
+            <path d="M101 36 q-2 3 -5 1.5" fill="none" stroke="#111" stroke-width=".9"/>
+            <path d="M74 38 Q80 43 86 41" fill="none" stroke="#14B3C2" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="82" cy="45" r="2.3" fill="#F6B600"/>
+          </g>
+        </svg>
+        <!-- Perrito poodle crema -->
+        <svg width="118" height="74" viewBox="0 0 124 78">
+          <circle class="tail" cx="20" cy="26" r="8" fill="#F3DDB3" stroke="#d9bd8c" stroke-width="1.2"/>
+          <g class="leg"><rect x="30" y="50" width="9" height="22" rx="4.5" fill="#F3DDB3" stroke="#d9bd8c"/></g>
+          <g class="leg b"><rect x="42" y="50" width="9" height="22" rx="4.5" fill="#F3DDB3" stroke="#d9bd8c"/></g>
+          <g class="leg b"><rect x="70" y="50" width="9" height="22" rx="4.5" fill="#F3DDB3" stroke="#d9bd8c"/></g>
+          <g class="leg"><rect x="82" y="50" width="9" height="22" rx="4.5" fill="#F3DDB3" stroke="#d9bd8c"/></g>
+          <g class="bob" fill="#F3DDB3" stroke="#d9bd8c" stroke-width="1.2">
+            <circle cx="34" cy="40" r="13"/><circle cx="48" cy="34" r="13"/><circle cx="62" cy="34" r="13"/><circle cx="76" cy="38" r="13"/>
+            <circle cx="44" cy="48" r="11"/><circle cx="66" cy="48" r="11"/>
+            <circle cx="88" cy="16" r="8"/><circle cx="98" cy="13" r="8"/><circle cx="106" cy="19" r="7"/>
+            <circle cx="96" cy="28" r="15"/>
+            <ellipse cx="84" cy="34" rx="8" ry="13" fill="#E8C994"/>
+            <ellipse cx="110" cy="33" rx="9" ry="7"/>
+            <circle cx="117" cy="31" r="3.4" fill="#141414" stroke="none"/>
+            <circle cx="101" cy="25" r="2.8" fill="#141414" stroke="none"/><circle cx="101.9" cy="24.1" r=".9" fill="#fff" stroke="none"/>
+            <path d="M112 37 q2.5 2.5 5 0" fill="none" stroke="#141414" stroke-width="1"/>
+            <path d="M86 44 Q93 48 101 44" fill="none" stroke="#E5177E" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="94" cy="50" r="2.6" fill="#F6B600" stroke="#c99400" stroke-width=".6"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div id="toolbar">
+      <button onclick="imprimir('a4')">Imprimir A4 (1:1)</button>
+      <button class="b2" onclick="imprimir('carta')">Imprimir Carta (1:1)</button>
+      <button class="sec" onclick="descargarSVG()">Descargar SVG (plotter)</button>
+      <div class="pieces" id="sel"></div>
+    </div>
+    <div id="preview"></div>
+    <div id="checks"></div>
+  </main>
+</div>
+<section id="diseno">
+  <div class="dpanel">
+    <h2>Prenda</h2>
+    <div class="vbtns" id="pbtns"><button data-p="tee" class="on">Camiseta</button><button data-p="hoodie">Hoodie</button><button data-p="medias">Medias</button></div>
+    <div id="fotoSec"><div class="hint">Elige la foto:</div><div id="fotoSel"></div></div>
+    <h2>Color</h2>
+    <div class="swatches" id="swatches"></div>
+    <div class="row"><label for="dColor">Otro color</label><input type="color" id="dColor" value="#f7f7f5"></div>
+    <div id="vistaSec"><h2>Vista</h2>
+    <div class="vbtns" id="vbtns"></div></div>
+    <h2>Diseños</h2>
+    <label class="upload">+ Agregar imagen<input type="file" id="dFile" accept="image/*" multiple hidden></label>
+    <div class="hint">También puedes arrastrar la imagen sobre la prenda. PNG con fondo transparente se ve mejor.</div>
+    <div id="dList"></div>
+    <div id="dCtrl" class="off">
+      <div class="row"><label for="dSize">Tamaño</label><input type="range" id="dSize" min="15" max="420"></div>
+      <div class="row"><label for="dRot">Rotación</label><input type="range" id="dRot" min="-180" max="180"></div>
+      <div class="hint" id="dInfo">Selecciona un diseño</div>
+      <div class="btns"><button class="sec" id="dCenter">Centrar</button><button class="sec" id="dTop">Al frente</button><button class="sec" id="dDup">Duplicar</button><button class="b2" id="dDel">Eliminar</button></div>
+      <div class="hint" style="margin-top:8px">Shift + clic: elegir varias · Ctrl+A: todas · Ctrl+C / Ctrl+V: copiar y pegar (también a otra foto o prenda) · Ctrl+D: duplicar · Supr: eliminar · Ctrl+V pega imágenes copiadas de otras apps.</div>
+    </div>
+    <h2>Opciones</h2>
+    <label class="chk"><input type="checkbox" id="dGuias" checked> Mostrar área de impresión</label>
+    <h2>Exportar</h2>
+    <button id="dPng">Descargar esta vista (PNG)</button>
+    <button class="b2" id="dPng2">Frente + espalda (PNG)</button>
+  </div>
+  <div class="stage" id="dStage">
+    <div class="vlabel" id="dVlabel">Frente</div>
+    <div class="card" id="dCard"></div>
+    <div class="fcard" id="fCard" style="display:none"><canvas id="fCanvas"></canvas><svg id="fOver" xmlns="http://www.w3.org/2000/svg"></svg><div class="floading" id="fLoading">Cargando foto…</div></div>
+    <div class="dhint" id="dHint">Arrastra una imagen aquí o usa “+ Agregar imagen”</div>
+  </div>
+</section>
+<div id="print"></div>
+
+<script src="mockups/mockups.js"></script>
+<script src="mockups/mockups_medias.js"></script>
+<script>
+// ================= DISEÑO / MOCKUP =================
+(function(){
+const COLORES=[['Blanco','#f7f7f5'],['Negro','#1b1b1d'],['Gris jaspe','#9a9a9e'],['Crema','#F3DDB3'],['Magenta','#E5177E'],['Turquesa','#14B3C2'],
+  ['Morado','#7A3CB0'],['Amarillo','#F6B600'],['Azul marino','#1f2a44'],['Rojo','#c62828'],['Verde militar','#4b5a3a'],['Rosa pastel','#f6c1d4']];
+const S=(d,w,o,extra='')=>`<path d="${d}" fill="none" stroke="#000" stroke-width="${w}" opacity="${o}" ${extra}/>`;
+const dash='stroke-dasharray="4 3"';
+const shade=(d,o)=>`<path d="${d}" fill="#000" opacity="${o}"/>`;
+
+// ---- Camiseta ----
+const teeBody=ny=>`M245,92 C265,${ny} 335,${ny} 355,92 L432,116 C470,128 520,170 552,214 L494,266 C478,250 455,232 442,222 C440,330 446,520 448,640 Q300,652 152,640 C154,520 160,330 158,222 C145,232 122,250 106,266 L48,214 C80,170 130,128 168,116 Z`;
+const teeSleeve='M168,200 C190,118 410,118 432,200 L462,560 L138,560 Z';
+const teeFolds=`<path d="M175,240 Q228,320 205,440" stroke-width="16"/><path d="M425,240 Q372,320 395,440" stroke-width="16"/>
+  <path d="M230,612 Q300,585 370,614" stroke-width="12"/><path d="M455,140 Q505,180 522,214" stroke-width="12"/><path d="M145,140 Q95,180 78,214" stroke-width="12"/>`;
+function teeOver(ny,front,c){
+  let s=`<path d="M245,92 C265,${ny} 335,${ny} 355,92" fill="none" stroke="${c}" stroke-width="13"/>`;
+  s+=S(`M245,92 C265,${ny} 335,${ny} 355,92`,13,.1)+S(`M252,99 C268,${ny+8} 332,${ny+8} 348,99`,1,.35,dash);
+  if(front)s+=S('M245,92 C265,82 335,82 355,92',1,.25);
+  s+=S('M245,92 L168,116',1.2,.14)+S('M355,92 L432,116',1.2,.14);
+  s+=S('M432,116 C424,160 432,200 442,222',1.4,.22)+S('M168,116 C176,160 168,200 158,222',1.4,.22);
+  s+=S('M545,207 L487,258',1,.35,dash)+S('M55,207 L113,258',1,.35,dash)+S('M153,626 Q300,638 447,626',1,.35,dash);
+  return s;}
+const teeSleeveOver=()=>S('M168,200 C190,118 410,118 432,200',1.5,.25)+S('M147,538 L453,538',1,.35,dash);
+
+// ---- Hoodie ----
+const hoBody=ny=>`M250,105 C270,${ny} 330,${ny} 350,105 L450,135 C500,150 525,200 535,260 L560,545 L506,560 L470,300 C462,280 452,262 445,250 C446,380 450,520 452,600 L448,650 Q300,660 152,650 L148,600 C150,520 154,380 155,250 C148,262 138,280 130,300 L94,560 L40,545 L65,260 C75,200 100,150 150,135 Z`;
+const hoSleeve='M170,150 C195,80 405,80 430,150 L412,580 L404,650 L196,650 L188,580 Z';
+const hoHood='M170,580 L170,230 C170,150 230,110 310,110 C400,110 450,170 455,260 C460,360 430,470 380,580 Q275,600 170,580 Z';
+const hoFolds=`<path d="M178,270 Q226,340 206,440" stroke-width="16"/><path d="M422,270 Q374,340 394,440" stroke-width="16"/>
+  <path d="M500,330 Q522,365 515,410" stroke-width="12"/><path d="M100,330 Q78,365 85,410" stroke-width="12"/>
+  <path d="M480,170 Q515,200 528,250" stroke-width="12"/><path d="M120,170 Q85,200 72,250" stroke-width="12"/>`;
+function hoCommon(){ // costuras, puños y pretina
+  let s=S('M250,105 L150,135',1.2,.14)+S('M350,105 L450,135',1.2,.14);
+  s+=S('M450,135 C440,180 442,220 445,250',1.4,.22)+S('M150,135 C160,180 158,220 155,250',1.4,.22);
+  s+=shade('M555,505 L560,545 L506,560 L501,520 Z',.1)+S('M555,505 L501,520',1.2,.3)+S('M554,512 L502,527',1,.3,dash);
+  s+=shade('M45,505 L40,545 L94,560 L99,520 Z',.1)+S('M45,505 L99,520',1.2,.3)+S('M46,512 L98,527',1,.3,dash);
+  s+=shade('M148,600 L452,600 L448,650 Q300,660 152,650 Z',.1)+S('M148,600 L452,600',1.2,.3)+S('M149,608 L451,608',1,.3,dash);
+  for(let x=165;x<440;x+=14)s+=S(`M${x},612 L${x},650`,1,.06);
+  return s;}
+function hoFrontOver(c){
+  const pk='M205,460 L395,460 C405,500 425,540 440,560 L440,598 L160,598 L160,560 C175,540 195,500 205,460 Z';
+  let s=hoCommon();
+  s+=S(pk,1.2,.25)+S('M211,466 L389,466',1,.35,dash);
+  s+=S('M395,460 C405,500 425,540 440,560',5,.12,'filter="url(#fSoft)"')+S('M205,460 C195,500 175,540 160,560',5,.12,'filter="url(#fSoft)"');
+  // capucha caída alrededor del cuello
+  const ring='M228,108 C228,62 372,62 372,108 C372,150 330,178 300,182 C270,178 228,150 228,108 Z';
+  const hole='M250,104 C250,80 350,80 350,104 C350,135 322,158 300,162 C278,158 250,135 250,104 Z';
+  s+=`<path d="${ring}" fill="${c}"/><path d="${ring}" fill="url(#gSide)" style="mix-blend-mode:multiply"/>`+S(ring,1.2,.25);
+  s+=`<path d="${hole}" fill="${c}"/>`+shade(hole,.42)+S('M240,108 C242,140 270,166 300,172 C330,166 358,140 360,108',1,.3,dash);
+  // cordones
+  s+=`<path d="M284,170 Q280,215 279,262" fill="none" stroke="#f2f2f2" stroke-width="4" stroke-linecap="round"/><path d="M316,170 Q321,215 323,268" fill="none" stroke="#f2f2f2" stroke-width="4" stroke-linecap="round"/>`;
+  s+=S('M284,170 Q280,215 279,262',4.5,.12)+S('M316,170 Q321,215 323,268',4.5,.12);
+  s+=`<rect x="276" y="258" width="6" height="12" rx="2" fill="#bbb"/><rect x="320" y="264" width="6" height="12" rx="2" fill="#bbb"/>`;
+  s+=`<circle cx="284" cy="170" r="4" fill="none" stroke="#999" stroke-width="2"/><circle cx="316" cy="170" r="4" fill="none" stroke="#999" stroke-width="2"/>`;
+  return s;}
+function hoBackOver(c){
+  const hood='M238,100 C205,170 215,265 300,302 C385,265 395,170 362,100 C340,92 260,92 238,100 Z';
+  let s=hoCommon();
+  s+=`<path d="${hood}" fill="#000" opacity=".18" filter="url(#fSoft)" transform="translate(0,6)"/>`;
+  s+=`<path d="${hood}" fill="${c}"/><path d="${hood}" fill="url(#gSide)" style="mix-blend-mode:multiply"/>`+S(hood,1.2,.25)+S('M300,96 L300,300',1.2,.22);
+  return s;}
+const hoHoodUnder=c=>`<path d="M170,580 L170,230 C170,150 230,110 310,110 L310,124 C240,124 184,162 184,230 L184,580 Z" fill="${c}"/>`;
+function hoHoodOver(c){
+  let s=shade('M170,580 L170,230 C170,150 230,110 310,110 L310,122 C238,122 182,160 182,230 L182,580 Z',.3);
+  s+=S('M192,578 L192,234 C192,170 240,134 310,134',1,.35,dash)+S(hoHood,1.2,.25);
+  s+=`<circle cx="186" cy="548" r="5" fill="none" stroke="#888" stroke-width="2"/>`;
+  s+=`<path d="M186,553 Q178,600 190,645" fill="none" stroke="#f2f2f2" stroke-width="4" stroke-linecap="round"/>`+S('M186,553 Q178,600 190,645',4.5,.12);
+  return s;}
+const hoSleeveOver=()=>S('M170,150 C195,80 405,80 430,150',1.5,.25)+shade('M412,580 L404,650 L196,650 L188,580 Z',.1)+
+  S('M188,580 L412,580',1.2,.3)+S('M189,588 L411,588',1,.3,dash)+[...Array(14)].map((_,i)=>S(`M${205+i*14},592 L${205+i*14},648`,1,.06)).join('');
+
+const PRENDAS={
+  tee:{n:'Camiseta',views:{
+    front:{n:'Frente',body:teeBody(130),k:5.3,area:{x:220,y:150,w:160,h:212,t:'30 × 40 cm'},side:[150,300],folds:teeFolds,pits:[[162,236],[438,236]],sh:[668,235],
+      under:c=>{const nk='M245,92 C265,130 335,130 355,92 C335,82 265,82 245,92 Z';return `<path d="${nk}" fill="${c}"/>`+shade(nk,.38);},over:c=>teeOver(130,true,c)},
+    back:{n:'Espalda',body:teeBody(104),k:5.3,area:{x:220,y:125,w:160,h:212,t:'30 × 40 cm'},side:[150,300],folds:teeFolds,pits:[[162,236],[438,236]],sh:[668,235],over:c=>teeOver(104,false,c)},
+    left:{n:'Manga izquierda',body:teeSleeve,k:13,area:{x:242,y:200,w:117,h:117,t:'9 × 9 cm'},side:[138,324],sleeve:1,sh:[588,175],over:teeSleeveOver},
+    right:{n:'Manga derecha',body:teeSleeve,k:13,area:{x:242,y:200,w:117,h:117,t:'9 × 9 cm'},side:[138,324],sleeve:1,sh:[588,175],over:teeSleeveOver}}},
+  hoodie:{n:'Hoodie',views:{
+    front:{n:'Frente',body:hoBody(150),k:5.3,area:{x:221,y:195,w:159,h:133,t:'30 × 25 cm'},side:[150,300],folds:hoFolds,pits:[[160,268],[440,268]],sh:[676,260],
+      under:c=>{const nk='M250,105 C270,150 330,150 350,105 C330,95 270,95 250,105 Z';return `<path d="${nk}" fill="${c}"/>`+shade(nk,.38);},over:hoFrontOver},
+    back:{n:'Espalda',body:hoBody(115),k:5.3,area:{x:221,y:318,w:159,h:186,t:'30 × 35 cm'},side:[150,300],folds:hoFolds,pits:[[160,268],[440,268]],sh:[676,260],over:hoBackOver},
+    left:{n:'Manga izquierda',body:hoSleeve,k:12,area:{x:246,y:160,w:108,h:300,t:'9 × 25 cm'},side:[170,260],sleeve:1,sh:[672,165],over:hoSleeveOver},
+    right:{n:'Manga derecha',body:hoSleeve,k:12,area:{x:246,y:160,w:108,h:300,t:'9 × 25 cm'},side:[170,260],sleeve:1,sh:[672,165],over:hoSleeveOver},
+    hood:{n:'Capucha',body:hoHood,k:13,area:{x:235,y:235,w:156,h:156,t:'12 × 12 cm'},side:[170,285],sleeve:1,sh:[608,150],
+      folds:'<path d="M250,460 Q330,430 410,470" stroke-width="14"/><path d="M220,300 Q260,250 330,240" stroke-width="12"/>',under:hoHoodUnder,over:hoHoodOver}}}
+};
+
+PRENDAS.medias={n:'Medias',views:{front:{n:'Foto'}}};
+const $=id=>document.getElementById(id);
+let prenda='tee', color='#f7f7f5', vista='front', selId=null, guias=true, nid=1, drag=null, flipping=false, svg=null;
+const layers={};
+// ---- Modo foto real ----
+let modo='foto'; const TPL={}; (window.KEZA_MOCKUPS||[]).forEach(t=>TPL[t.id]=t);
+const tplSel={tee:'tee_flat',hoodie:'hoodie_hanger',medias:'socks_sofa'};
+// fotos propias guardadas solo en este navegador
+try{(JSON.parse(localStorage.getItem('kezaFotos')||'[]')).forEach(t=>TPL[t.id]=t);}catch(e){}
+Object.keys(tplSel).forEach(p=>{const ts=Object.values(TPL).filter(t=>t.prenda===p);
+  if(ts.length&&!TPL[tplSel[p]])tplSel[p]=ts[0].id;});
+function guardarPropias(){try{localStorage.setItem('kezaFotos',JSON.stringify(Object.values(TPL).filter(t=>t.propia)));return true;}catch(e){return false;}}
+function crearPlantilla(file){
+  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+    const s=Math.min(1,1100/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.round(im.naturalWidth*s),h=Math.round(im.naturalHeight*s);
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0,w,h);
+    const p=x.getImageData(0,0,w,h).data;let alfa=false;for(let i=3;i<p.length;i+=4*31)if(p[i]<245){alfa=true;break;}
+    const mk=document.createElement('canvas');mk.width=w;mk.height=h;const mx=mk.getContext('2d'),md=mx.createImageData(w,h),q=md.data;
+    let bg=[0,0,0];if(!alfa){let n=0;for(const[cx,cy]of[[0,0],[w-10,0],[0,h-10],[w-10,h-10]])for(let yy=cy;yy<cy+10;yy++)for(let xx=cx;xx<cx+10;xx++){const k=(yy*w+xx)*4;bg[0]+=p[k];bg[1]+=p[k+1];bg[2]+=p[k+2];n++;}bg=bg.map(v=>v/n);}
+    let x0=w,y0=h,x1=0,y1=0;
+    for(let i=0;i<w*h;i++){const k=i*4;let a;
+      if(alfa)a=p[k+3];else{const d=Math.hypot(p[k]-bg[0],p[k+1]-bg[1],p[k+2]-bg[2]);a=d>26?255:d>16?Math.round((d-16)*25.5):0;}
+      q[k]=q[k+1]=q[k+2]=a;q[k+3]=255;
+      if(a>128){const xx=i%w,yy=(i/w)|0;if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy;}}
+    if(x1<=x0){alert('No encontré la prenda en la foto. Usa un PNG sin fondo o una foto con fondo liso.');return;}
+    mx.putImageData(md,0,0);
+    const b=document.createElement('canvas');b.width=w;b.height=h;const bx=b.getContext('2d');
+    if(alfa){bx.fillStyle='#ececec';bx.fillRect(0,0,w,h);}bx.drawImage(c,0,0);
+    const bw=x1-x0,bh=y1-y0,id='mi_'+Date.now();
+    const t={id,prenda,propia:true,n:file.name.replace(/\.[^.]+$/,'').slice(0,20),k:bw/(prenda==='medias'?20:55),
+      area:prenda==='medias'?(bw>bh*0.6?[x0+bw*0.24,y0+bh*0.05,bw*0.26,bh*0.28]:[x0+bw*0.25,y0+bh*0.06,bw*0.5,bh*0.3]):[x0+bw*0.3,y0+bh*0.18,bw*0.4,bh*0.4],t:'aprox.',
+      w,h,img:b.toDataURL('image/jpeg',0.88),mask:mk.toDataURL('image/png')};
+    TPL[id]=t;tplSel[prenda]=id;selId=null;
+    if(!guardarPropias())alert('La foto se usará ahora, pero es muy pesada para guardarla en el navegador: al recargar tendrás que subirla de nuevo.');
+    $('fLoading').style.display='';render();};im.src=r.result;};
+  r.readAsDataURL(file);}
+const tpl=()=>TPL[tplSel[prenda]];
+const VW=(v=vista)=>{if(modo==='foto'){const t=tpl(),a=t.area;return {n:t.n,k:t.k,area:{x:a[0],y:a[1],w:a[2],h:a[3],t:t.t}};}return PRENDAS[prenda].views[v];};
+const LS=(v=vista)=>{const key=modo==='foto'?'foto:'+tplSel[prenda]:prenda+':'+v;return layers[key]||(layers[key]=[]);};
+const cur=()=>LS().find(l=>l.id===selId);
+// selección múltiple: selId es la principal, selSet contiene todas
+const selSet=new Set();
+const sels=()=>LS().filter(L=>selSet.has(L.id)||L.id===selId);
+function normSel(){if(selId==null)selSet.clear();else if(!selSet.has(selId)){selSet.clear();selSet.add(selId);}
+  const ids=new Set(LS().map(L=>L.id));[...selSet].forEach(i=>{if(!ids.has(i))selSet.delete(i);});if(selId!=null&&!ids.has(selId))selId=null;}
+let clip=[];
+function clonar(arr,off){return arr.map(L=>({...L,id:nid++,x:L.x+off,y:L.y+off}));}
+function pegar(arr){if(!arr.length)return;const k=modo==='foto'?tpl().w/600:1,nuevos=clonar(arr,18*k);
+  LS().push(...nuevos);selSet.clear();nuevos.forEach(L=>selSet.add(L.id));selId=nuevos[nuevos.length-1].id;render();}
+const card=$('dCard'), stage=$('dStage');
+
+function imgTag(L){return `<image class="dlay" data-id="${L.id}" href="${L.src}" x="${L.x-L.w/2}" y="${L.y-L.h/2}" width="${L.w}" height="${L.h}" transform="rotate(${L.rot} ${L.x} ${L.y})" preserveAspectRatio="none" style="cursor:move"/>`;}
+
+function svgStr(v,exp){
+  const V=VW(v), sl=!!V.sleeve, body=V.body;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" width="600" height="700">
+  <defs>
+    <clipPath id="clipT"><path d="${body}"/></clipPath>
+    <filter id="fBlur" x="-30%" y="-300%" width="160%" height="700%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="fSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="fNoise" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="saturate" values="0"/></filter>
+    <filter id="fWarp" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="2" seed="7" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="7" xChannelSelector="R" yChannelSelector="G"/></filter>
+    <linearGradient id="gSide" x1="0" x2="1"><stop offset="0" stop-opacity="${sl?.38:.24}"/><stop offset="${sl?.3:.2}" stop-opacity="0"/><stop offset="${sl?.7:.8}" stop-opacity="0"/><stop offset="1" stop-opacity="${sl?.38:.24}"/></linearGradient>
+    <linearGradient id="gTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-opacity="0"/><stop offset=".86" stop-opacity="0"/><stop offset="1" stop-opacity=".14"/></linearGradient>
+    <radialGradient id="gHi" cx=".5" cy=".33" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  </defs>`;
+  s+=`<ellipse cx="300" cy="${V.sh[0]}" rx="${V.sh[1]}" ry="14" fill="#000" opacity=".22" filter="url(#fBlur)"/>`;
+  if(V.under)s+=V.under(color);
+  s+=`<path d="${body}" fill="${color}"/>`;
+  s+=`<g clip-path="url(#clipT)"><g filter="url(#fWarp)">${LS(v).map(imgTag).join('')}</g></g>`;
+  s+=`<g clip-path="url(#clipT)" pointer-events="none">
+    <g style="mix-blend-mode:multiply">
+      <rect x="${V.side[0]}" y="0" width="${V.side[1]}" height="700" fill="url(#gSide)"/>
+      <rect width="600" height="700" fill="url(#gTop)"/>
+      <g fill="none" stroke="#000" stroke-linecap="round" filter="url(#fSoft)" opacity=".13">${V.folds||''}</g>
+      ${(V.pits||[]).map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="16" ry="34" fill="#000" opacity=".12" filter="url(#fSoft)"/>`).join('')}
+    </g>
+    <rect width="600" height="700" fill="url(#gHi)"/>
+    <rect width="600" height="700" filter="url(#fNoise)" opacity=".07" style="mix-blend-mode:multiply"/>
+  </g>`;
+  s+=`<g pointer-events="none">${V.over(color)}</g>`;
+  if(!exp){
+    if(guias){const a=V.area;
+      s+=`<g pointer-events="none"><rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="none" stroke="#14B3C2" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="${a.x+a.w/2}" y="${a.y+a.h+16}" font-size="12" text-anchor="middle" fill="#14B3C2" font-family="system-ui">Área de impresión ${a.t}</text></g>`;}
+    s+='<g id="selBox"></g>';
+  }
+  return s+'</svg>';
+}
+
+function bind(el){
+  el.addEventListener('pointerdown',onDown); el.addEventListener('pointermove',onMove);
+  el.addEventListener('pointerup',onUp); el.addEventListener('pointercancel',onUp);
+  el.addEventListener('wheel',onWheel,{passive:false});}
+function render(){
+  const foto=modo==='foto';
+  card.style.display=foto?'none':''; $('fCard').style.display=foto?'':'none';
+  $('vistaSec').style.display=foto?'none':''; $('fotoSec').style.display=foto?'':'none'; $('dPng2').style.display=foto?'none':'';
+  if(foto&&!tpl()){
+    fotoThumbs();svg=null;$('fCanvas').width=$('fCanvas').width;$('fOver').innerHTML='';
+    $('fLoading').style.display='';$('fLoading').textContent='Sube una foto de '+PRENDAS[prenda].n.toLowerCase()+' con “+ Usar mi foto”';
+    $('dVlabel').textContent=PRENDAS[prenda].n;panel();return;}
+  $('fLoading').textContent='Cargando foto…';
+  if(foto){
+    const t=tpl(),o=$('fOver'),s=t.w/600,a=VW().area;
+    o.setAttribute('viewBox',`0 0 ${t.w} ${t.h}`);
+    o.innerHTML=(guias?`<g pointer-events="none"><rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="none" stroke="#14B3C2" stroke-width="${1.6*s}" stroke-dasharray="${6*s} ${5*s}"/>
+      <text x="${a.x+a.w/2}" y="${a.y+a.h+16*s}" font-size="${12*s}" text-anchor="middle" fill="#14B3C2" font-family="system-ui">Área de impresión ${a.t}</text></g>`:'')+'<g id="selBox"></g>';
+    svg=o; if(!o._b){bind(o);o._b=1;}
+    $('dVlabel').textContent=PRENDAS[prenda].n+' · '+t.n;
+    fotoThumbs(); fotoRender(); drawSel(); panel(); return;
+  }
+  card.innerHTML=svgStr(vista,false); svg=card.querySelector('svg'); bind(svg);
+  $('dVlabel').textContent=PRENDAS[prenda].n+' · '+VW().n;
+  drawSel(); panel();
+}
+// ---- Motor de foto real: recolorea la tela y deforma el estampado con los pliegues de la foto ----
+const loadImg=src=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});
+const hexRgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+function prep(t){
+  if(t._p)return t._p;
+  return t._p=Promise.all([loadImg(t.img),loadImg(t.mask)]).then(([im,mk])=>{
+    const w=t.w,h=t.h,N=w*h,c=document.createElement('canvas');c.width=w;c.height=h;
+    const x=c.getContext('2d',{willReadFrequently:true});
+    x.drawImage(im,0,0);const base=x.getImageData(0,0,w,h);
+    x.clearRect(0,0,w,h);x.drawImage(mk,0,0);const md=x.getImageData(0,0,w,h).data;
+    const A=new Float32Array(N),S=new Float32Array(N),bd=base.data;
+    for(let i=0;i<N;i++){A[i]=md[i*4]/255;const p=i*4;S[i]=(0.299*bd[p]+0.587*bd[p+1]+0.114*bd[p+2])/255;}
+    const v=[];for(let i=0;i<N;i+=5)if(A[i]>0.5)v.push(S[i]);v.sort((a,b)=>a-b);
+    const Lw=v[Math.floor(v.length*0.93)]||1;for(let i=0;i<N;i++)S[i]/=Lw;
+    // mapa de desplazamiento a partir de la luminancia suavizada
+    const DX=new Int8Array(N),DY=new Int8Array(N);
+    try{x.filter='blur(7px)';x.clearRect(0,0,w,h);x.drawImage(im,0,0);x.filter='none';
+      const bl=x.getImageData(0,0,w,h).data,amp=w/1200*16;
+      for(let i=0;i<N;i++){if(A[i]<0.01)continue;const p=i*4,lb=(0.299*bl[p]+0.587*bl[p+1]+0.114*bl[p+2])/255/Lw;
+        const d=Math.max(-12,Math.min(12,Math.round((lb-0.95)*amp)));DX[i]=d;DY[i]=d;}}catch(e){}
+    return {base,A,S,DX,DY,dc:document.createElement('canvas')};
+  });
+}
+let fotoPending=false;
+function fotoRender(){if(fotoPending)return;fotoPending=true;requestAnimationFrame(()=>{fotoPending=false;
+  const t=tpl();prep(t).then(P=>{if(modo!=='foto'||tpl()!==t)return;$('fLoading').style.display='none';drawFoto(P,t);});});}
+function drawFoto(P,t){
+  const w=t.w,h=t.h,N=w*h,cv=$('fCanvas');if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
+  const dc=P.dc;dc.width=w;dc.height=h;const dx=dc.getContext('2d',{willReadFrequently:true});
+  dx.clearRect(0,0,w,h);
+  for(const L of LS()){if(!L._img)continue;dx.save();dx.translate(L.x,L.y);dx.rotate(L.rot*Math.PI/180);dx.drawImage(L._img,-L.w/2,-L.h/2,L.w,L.h);dx.restore();}
+  const D=dx.getImageData(0,0,w,h).data,o=new Uint8ClampedArray(P.base.data),A=P.A,S=P.S,DX=P.DX,DY=P.DY;
+  const [cr,cg,cb]=hexRgb(color),blanco=cr>=240&&cg>=240&&cb>=240,hayD=LS().length>0;
+  const lum=(0.299*cr+0.587*cg+0.114*cb)/255, lift=(1-lum)*(1-lum)*55; // en colores oscuros, las luces de la tela aclaran
+  for(let i=0;i<N;i++){const a=A[i];if(a<0.004)continue;const p=i*4,s=S[i];let r=o[p],g=o[p+1],b=o[p+2];
+    if(!blanco){const sh=Math.max(0,Math.min(1,1-(1-s)*1.25)),lt=Math.max(0,Math.min(1.1,(s-0.6)/0.4)),lit=lt*lt,hi=Math.max(0,s-1)*200+lit*lift;
+      r=r*(1-a)+(cr*sh+hi)*a;g=g*(1-a)+(cg*sh+hi)*a;b=b*(1-a)+(cb*sh+hi)*a;}
+    if(hayD){const xx=(i%w)+DX[i],yy=((i/w)|0)+DY[i];
+      if(xx>=0&&xx<w&&yy>=0&&yy<h){const q=(yy*w+xx)*4,da=D[q+3]/255*a*0.97;
+        if(da>0){const sh=Math.min(1.04,0.08+s*0.94);r=r*(1-da)+D[q]*sh*da;g=g*(1-da)+D[q+1]*sh*da;b=b*(1-da)+D[q+2]*sh*da;}}}
+    o[p]=r;o[p+1]=g;o[p+2]=b;}
+  cv.getContext('2d').putImageData(new ImageData(o,w,h),0,0);
+}
+function fotoThumbs(){const ts=Object.values(TPL).filter(t=>t.prenda===prenda);
+  $('fotoSel').innerHTML=ts.map(t=>`<button class="ft ${t.id===tplSel[prenda]?'on':''}" data-t="${t.id}" style="position:relative"><img src="${t.img}" alt=""><span>${t.n}</span>${t.propia?`<b class="ftdel" data-del="${t.id}" title="Quitar esta foto">✕</b>`:''}</button>`).join('')
+    +`<label class="ft ftadd">+ Usar mi foto<small>PNG sin fondo o fondo liso</small><input type="file" accept="image/*" hidden id="fPropia"></label>`;
+  $('fPropia').addEventListener('change',e=>{const f=e.target.files[0];if(f)crearPlantilla(f);e.target.value='';});}
+const corners=L=>{const a=L.rot*Math.PI/180,c=Math.cos(a),s=Math.sin(a),hw=L.w/2,hh=L.h/2;
+  return [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(([x,y])=>[L.x+x*c-y*s,L.y+x*s+y*c]);};
+function pt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+function upd(L){if(modo==='foto'){fotoRender();drawSel();panelVals();return;}
+  const el=svg.querySelector(`image[data-id="${L.id}"]`);if(!el)return;
+  el.setAttribute('x',L.x-L.w/2);el.setAttribute('y',L.y-L.h/2);el.setAttribute('width',L.w);el.setAttribute('height',L.h);
+  el.setAttribute('transform',`rotate(${L.rot} ${L.x} ${L.y})`);drawSel();panelVals();}
+function drawSel(){const g=svg&&svg.querySelector('#selBox');if(!g)return;normSel();
+  const foto=modo==='foto',k=foto?tpl().w/600:1;let s='';
+  if(foto)s+=LS().map(L=>`<polygon class="dlay" data-id="${L.id}" points="${corners(L).map(p=>p.join(',')).join(' ')}" fill="transparent" style="cursor:move"/>`).join('');
+  const S=sels();
+  S.forEach(L=>{const P=corners(L);
+    s+=`<polygon points="${P.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#E5177E" stroke-width="${(L.id===selId?1.5:1.1)*k}" stroke-dasharray="${5*k} ${4*k}" pointer-events="none"/>`;
+    if(S.length===1)s+=`<circle cx="${P[2][0]}" cy="${P[2][1]}" r="${9*k}" fill="#E5177E" stroke="#fff" stroke-width="${2*k}" data-h="1" style="cursor:nwse-resize"/>`;});
+  g.innerHTML=s;}
+function onDown(e){
+  card.style.transition='none';card.style.transform='none';
+  const t=e.target,L0=cur();
+  if(t.dataset&&t.dataset.h&&L0){drag={m:'r',L:L0};}
+  else if(t.classList&&t.classList.contains('dlay')){const id=+t.dataset.id;normSel();
+    if(e.shiftKey||e.ctrlKey||e.metaKey){
+      if(selSet.has(id)&&selSet.size>1){selSet.delete(id);selId=[...selSet].pop();drawSel();panel();return;}
+      selSet.add(id);selId=id;}
+    else if(!selSet.has(id)){selSet.clear();selSet.add(id);selId=id;}
+    else selId=id;
+    const p=pt(e);drag={m:'m',items:sels().map(L=>({L,dx:p.x-L.x,dy:p.y-L.y}))};}
+  else {selId=null;drawSel();panel();return;}
+  svg.setPointerCapture(e.pointerId);drawSel();panel();e.preventDefault();}
+function onMove(e){if(!drag)return;const p=pt(e);
+  if(drag.m==='m'){drag.items.forEach(o=>{o.L.x=p.x-o.dx;o.L.y=p.y-o.dy;});
+    if(modo==='foto')upd(drag.items[0].L);else drag.items.forEach(o=>upd(o.L));return;}
+  const L=drag.L,a=-L.rot*Math.PI/180,dx=p.x-L.x,dy=p.y-L.y,lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);
+  L.w=Math.max(15,Math.max(2*Math.abs(lx),2*Math.abs(ly)*L.ar));L.h=L.w/L.ar;
+  upd(L);}
+function onUp(){drag=null;}
+function onWheel(e){const L=cur();if(!L||!(e.target.classList&&e.target.classList.contains('dlay')))return;e.preventDefault();
+  L.w=Math.max(15,Math.min(600,L.w*(e.deltaY<0?1.05:0.95)));L.h=L.w/L.ar;upd(L);}
+
+// Inclinación 3D con el mouse
+stage.addEventListener('pointermove',e=>{if(drag||flipping||e.buttons||modo==='foto')return;const r=stage.getBoundingClientRect();
+  const dx=(e.clientX-r.left)/r.width-.5,dy=(e.clientY-r.top)/r.height-.5;
+  card.style.transition='transform .2s ease-out';card.style.transform=`rotateY(${dx*12}deg) rotateX(${-dy*7}deg)`;});
+stage.addEventListener('pointerleave',()=>{if(flipping)return;card.style.transition='transform .5s ease';card.style.transform='none';});
+
+function flip(change){if(flipping)return;flipping=true;
+  card.style.transition='transform .22s ease-in';card.style.transform='rotateY(90deg)';
+  setTimeout(()=>{change();selId=null;render();card.style.transition='none';card.style.transform='rotateY(-90deg)';void card.offsetWidth;
+    card.style.transition='transform .3s ease-out';card.style.transform='none';setTimeout(()=>flipping=false,300);},220);}
+function setVista(v){if(v!==vista)flip(()=>{vista=v;});}
+function setPrenda(p){if(p===prenda)return;
+  $('pbtns').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  if(modo==='foto'){prenda=p;if(!PRENDAS[p].views[vista])vista='front';vistasBtns();selId=null;$('fLoading').style.display='';render();return;}
+  flip(()=>{prenda=p;if(!PRENDAS[p].views[vista])vista='front';vistasBtns();});}
+function setModo(m){if(m===modo)return;modo=m;selId=null;
+  card.style.transform='none';render();}
+
+function panelVals(){const L=cur();$('dCtrl').classList.toggle('off',!L);if(!L){$('dInfo').textContent='Selecciona un diseño';return;}
+  $('dSize').value=L.w;$('dRot').value=L.rot;
+  $('dInfo').textContent=`Tamaño aprox.: ${(L.w/VW().k).toFixed(1)} × ${(L.h/VW().k).toFixed(1)} cm`;}
+function panel(){
+  $('vbtns').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===vista));
+  normSel();
+  $('dList').innerHTML=LS().map(L=>`<div class="lay ${selSet.has(L.id)?'on':''}" data-id="${L.id}"><img src="${L.src}" alt=""><span>${L.name}</span></div>`).join('');
+  $('dHint').style.display=LS().length?'none':'';
+  panelVals();}
+function vistasBtns(){const vs=PRENDAS[prenda].views;
+  $('vbtns').innerHTML=Object.keys(vs).map(v=>`<button data-v="${v}">${vs[v].n}</button>`).join('');}
+
+function addFiles(files){if(modo==='foto'&&!tpl()){alert('Primero sube o elige una foto de la prenda.');return;}
+  [...files].filter(f=>f.type.startsWith('image/')).forEach(f=>{const r=new FileReader();
+  r.onload=()=>{const im=new Image();im.onload=()=>{const ar=im.naturalWidth/im.naturalHeight,a=VW().area,w=Math.min(a.w*0.8,a.h*0.8*ar);
+    const L={id:nid++,src:r.result,_img:im,name:f.name,x:a.x+a.w/2,y:a.y+a.h/2,w,h:w/ar,ar,rot:0};LS().push(L);selId=L.id;render();};im.src=r.result;};
+  r.readAsDataURL(f);});}
+
+// Panel
+$('swatches').innerHTML=COLORES.map(([n,c])=>`<button class="sw" title="${n}" data-c="${c}" style="background:${c}"></button>`).join('');
+const marcarColor=()=>$('swatches').querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.dataset.c===color));
+$('swatches').addEventListener('click',e=>{const c=e.target.dataset.c;if(!c)return;color=c;$('dColor').value=c;marcarColor();render();});
+$('dColor').addEventListener('input',e=>{color=e.target.value;marcarColor();render();});
+vistasBtns();
+$('pbtns').addEventListener('click',e=>{if(e.target.dataset.p)setPrenda(e.target.dataset.p);});
+$('vbtns').addEventListener('click',e=>{if(e.target.dataset.v)setVista(e.target.dataset.v);});
+$('dFile').addEventListener('change',e=>{addFiles(e.target.files);e.target.value='';});
+$('dList').addEventListener('click',e=>{const d=e.target.closest('.lay');if(!d)return;const id=+d.dataset.id;normSel();
+  if(e.shiftKey||e.ctrlKey||e.metaKey){if(selSet.has(id)&&selSet.size>1){selSet.delete(id);selId=[...selSet].pop();}else{selSet.add(id);selId=id;}}
+  else{selSet.clear();selSet.add(id);selId=id;}
+  drawSel();panel();});
+$('dSize').addEventListener('input',e=>{const L=cur();if(!L)return;L.w=+e.target.value;L.h=L.w/L.ar;upd(L);});
+$('dRot').addEventListener('input',e=>{const L=cur();if(!L)return;L.rot=+e.target.value;upd(L);});
+$('dCenter').addEventListener('click',()=>{const L=cur();if(!L)return;const a=VW().area;L.x=a.x+a.w/2;L.y=a.y+a.h/2;upd(L);});
+$('dTop').addEventListener('click',()=>{const L=cur();if(!L)return;const arr=LS();arr.push(arr.splice(arr.indexOf(L),1)[0]);render();});
+$('dDel').addEventListener('click',()=>{const S=sels();if(!S.length)return;const arr=LS();S.forEach(L=>arr.splice(arr.indexOf(L),1));selId=null;render();});
+$('dDup').addEventListener('click',()=>pegar(sels()));
+$('dGuias').addEventListener('change',e=>{guias=e.target.checked;render();});
+const enDiseno=e=>$('diseno').classList.contains('on')&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
+document.addEventListener('keydown',e=>{if(!enDiseno(e))return;const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+  if((e.key==='Delete'||e.key==='Backspace')&&sels().length){$('dDel').click();e.preventDefault();}
+  else if(mod&&k==='d'&&sels().length){pegar(sels());e.preventDefault();}
+  else if(mod&&k==='a'&&LS().length){selSet.clear();LS().forEach(L=>selSet.add(L.id));selId=LS()[LS().length-1].id;drawSel();panel();e.preventDefault();}
+  else if(e.key==='Escape'){selId=null;drawSel();panel();}});
+// Copiar / pegar (dentro de la página y desde otras aplicaciones)
+document.addEventListener('copy',e=>{if(!enDiseno(e)||!sels().length)return;
+  clip=sels().map(L=>({...L}));e.clipboardData.setData('text/plain','keza-capas');e.preventDefault();});
+document.addEventListener('cut',e=>{if(!enDiseno(e)||!sels().length)return;
+  clip=sels().map(L=>({...L}));e.clipboardData.setData('text/plain','keza-capas');e.preventDefault();$('dDel').click();});
+document.addEventListener('paste',e=>{if(!enDiseno(e))return;const cd=e.clipboardData;
+  if(cd&&cd.getData('text/plain')==='keza-capas'&&clip.length){pegar(clip);e.preventDefault();return;}
+  const files=cd?[...cd.files].filter(f=>f.type.startsWith('image/')):[];
+  if(files.length){addFiles(files);e.preventDefault();return;}
+  if(clip.length){pegar(clip);e.preventDefault();}});
+stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('drop');});
+stage.addEventListener('dragleave',()=>stage.classList.remove('drop'));
+stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('drop');addFiles(e.dataTransfer.files);});
+
+// Exportar PNG
+const toImg=str=>new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(str);});
+async function exportar(views){const sc=2,c=document.createElement('canvas');c.width=600*views.length*sc;c.height=760*sc;
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.scale(sc,sc);
+  for(let i=0;i<views.length;i++){const im=await toImg(svgStr(views[i],true));x.drawImage(im,i*600,0,600,700);
+    x.fillStyle='#555';x.font='16px system-ui, sans-serif';x.textAlign='center';x.fillText(VW(views[i]).n,i*600+300,728);}
+  x.textAlign='right';x.fillStyle='#E5177E';x.font='bold 14px system-ui, sans-serif';x.fillText('KEZA Urban',600*views.length-14,752);
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`keza_${prenda}_${views.join('_')}.png`;a.click();});}
+$('dPng').addEventListener('click',()=>{
+  if(modo==='foto'){$('fCanvas').toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`keza_${tplSel[prenda]}.png`;a.click();},'image/png');return;}
+  exportar([vista]);});
+$('fotoSel').addEventListener('click',e=>{
+  const del=e.target.dataset&&e.target.dataset.del;
+  if(del){e.stopPropagation();if(!confirm('¿Quitar esta foto?'))return;delete TPL[del];delete layers['foto:'+del];guardarPropias();
+    const ts=Object.values(TPL).filter(t=>t.prenda===prenda);tplSel[prenda]=ts.length?ts[0].id:undefined;selId=null;render();return;}
+  const b=e.target.closest('.ft');if(!b||!b.dataset.t)return;tplSel[prenda]=b.dataset.t;selId=null;$('fLoading').style.display='';render();});
+$('dPng2').addEventListener('click',()=>exportar(['front','back']));
+
+// Pestañas
+function setTab(t){document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  $('app').style.display=t==='patron'?'':'none';$('diseno').classList.toggle('on',t==='diseno');
+  try{localStorage.setItem('kezaTab',t);}catch(e){}
+  if(t==='diseno'&&!svg)render();}
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+marcarColor();
+let t0='patron';try{t0=localStorage.getItem('kezaTab')||'patron';}catch(e){}
+if(!['patron','diseno'].includes(t0))t0='patron';
+setTab(t0);
+})();
+</script>
+
+<script>
+// ---------- Tablas de talles ----------
+const TABLAS = {
+  H: { nombres:['XXS','XS','S','M','L','XL','XXL','3XL','4XL','5XL','6XL'],
+    pecho:[88,92,96,100,104,108,112,118,124,130,136], cintura:[76,80,84,88,92,96,100,106,112,119,125],
+    cadera:[92,96,100,104,108,112,116,122,128,134,140], largoEsp:[46,46.5,47,47.5,48,48.5,49,49.5,50,50.5,51],
+    anchoEsp:[36,37,38,39,40,41,42,43,44,45,46], cuello:[36,37,38,39,40,41,42,43,44,45,46],
+    hombro:[14,14.5,15,15.5,16,16.5,17,18,19,20,21], manga:[64,64,64,64,64,64,64,64,64,64,64],
+    brazo:[null,null,null,null,null,null,null,null,null,null,null], muneca:[17,18,18,18,19,19,20,20,20,21,21] },
+  D: { nombres:['XXS','XS','S','M','L','XL','2XL','3XL','4XL','5XL','6XL','7XL'],
+    pecho:[84,88,92,96,100,104,106,110,114,120,126,132], cintura:[60,64,68,72,76,80,86,90,94,100,106,112],
+    cadera:[88,92,96,100,104,108,112,116,120,126,132,138], largoEsp:[41,41.5,42,42.5,43,43.5,44,44.5,45,45.5,46,46.5],
+    anchoEsp:[33,34,35,36,37,38,39,40,41,43,45,47], cuello:[33,34,35,36,37,38,38,39,40,41,42,43],
+    hombro:[12.5,13,13.5,14,14.5,15,15,15.25,15.5,15.75,16,16.25], manga:[60,60,64,64,64,64,60,60,61,61,62,62],
+    brazo:[32.5,33,34.5,36,37.5,38,40,41.5,43,44.5,46,47.5], muneca:[14,15,15.5,16,16.5,17,17,17.5,18,18.5,19,19.5] }
+};
+
+const CAMPOS = [
+  {g:'Medidas del cuerpo (cm)'},
+  {k:'pecho', l:'Contorno de pecho'},
+  {k:'cintura', l:'Contorno de cintura'},
+  {k:'cadera', l:'Contorno de cadera'},
+  {k:'largoEsp', l:'Largo de espalda (talle)'},
+  {k:'anchoEsp', l:'Ancho de espalda'},
+  {k:'cuello', l:'Contorno de cuello'},
+  {k:'hombro', l:'Ancho (largo) de hombro'},
+  {k:'manga', l:'Largo de manga'},
+  {k:'brazo', l:'Contorno de brazo (opcional)'},
+  {k:'muneca', l:'Contorno de muñeca'},
+  {g:'Diseño de la prenda'},
+  {k:'largoTotal', l:'Largo total (desde hombro)'},
+  {k:'holgura', l:'Holgura de pecho', d:{h:16,t:10}},
+  {k:'caida', l:'Caída de hombro', d:{h:2,t:1}},
+  {k:'bajaSisa', l:'Bajada extra de sisa', d:{h:2,t:1}},
+  {k:'copa', l:'Altura de copa (% de sisa)', d:{h:24,t:22}},
+  {k:'embebido', l:'Embebido copa (total)', d:{h:0.5,t:0.5}},
+  {k:'escoteExtra', l:'Ensanche de escote', d:{h:1.5,t:1}},
+  {k:'bajaEscote', l:'Bajada escote delantero (+ cuello/6)', d:{h:3.5,t:2}},
+  {k:'margen', l:'Margen de costura', d:{h:1,t:1}},
+  {k:'rib', l:'Alto rib terminado (puño/pretina)', d:{h:7}, only:'h'},
+  {k:'bocaManga', l:'Ancho boca de manga', only:'h'},
+  {k:'capAlto', l:'Alto de capucha', only:'h'},
+  {k:'capExtra', l:'Profundidad extra capucha', d:{h:3}, only:'h'},
+  {k:'mangaCorta', l:'Largo de manga corta', d:{t:20}, only:'t'},
+  {k:'dobladillo', l:'Dobladillo (ruedo y manga)', d:{t:2.5}, only:'t'},
+  {k:'cuelloRib', l:'Ancho rib de cuello terminado', d:{t:2}, only:'t'},
+];
+
+// ---------- Geometría ----------
+const V=(x,y)=>({x,y});
+const add=(a,b)=>V(a.x+b.x,a.y+b.y), sub=(a,b)=>V(a.x-b.x,a.y-b.y), mul=(a,k)=>V(a.x*k,a.y*k);
+const len=a=>Math.hypot(a.x,a.y), norm=a=>{const l=len(a)||1;return V(a.x/l,a.y/l);};
+const cross=(a,b)=>a.x*b.y-a.y*b.x;
+function bez(p0,p1,p2,p3,n=40){const r=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;
+  r.push(V(u*u*u*p0.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*p3.x, u*u*u*p0.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*p3.y));}return r;}
+const plen=P=>{let s=0;for(let i=1;i<P.length;i++)s+=len(sub(P[i],P[i-1]));return s;};
+function bisect(f,target,lo,hi){for(let i=0;i<50;i++){const m=(lo+hi)/2; if(f(m)<target)lo=m; else hi=m;}return (lo+hi)/2;}
+
+function flatten(edges){const P=[],S=[];
+  edges.forEach(e=>{for(let i=0;i<e.pts.length-1;i++){const p=e.pts[i];
+    if(P.length&&len(sub(p,P[P.length-1]))<1e-4)continue; P.push(p);S.push(e.sa);}});
+  if(len(sub(P[0],P[P.length-1]))<1e-4){P.pop();S.pop();}
+  return {P,S};}
+function offsetPoly(P,S){const n=P.length;let A=0;
+  for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];A+=a.x*b.y-b.x*a.y;}
+  const sg=A>0?1:-1,T=[],N=[];
+  for(let i=0;i<n;i++){const t=norm(sub(P[(i+1)%n],P[i]));T.push(t);N.push(V(sg*t.y,-sg*t.x));}
+  const out=[],dmax=Math.max(...S);
+  for(let i=0;i<n;i++){const j=(i-1+n)%n,p=P[i];
+    const a=add(p,mul(N[j],S[j])),b=add(p,mul(N[i],S[i])),c=cross(T[j],T[i]);
+    if(Math.abs(c)<1e-6){out.push(b);continue;}
+    const s=cross(sub(b,a),T[i])/c,X=add(a,mul(T[j],s));
+    if(len(sub(X,p))>3*dmax+0.01)out.push(a,b);else out.push(X);}
+  return out;}
+const pathD=P=>'M'+P.map(p=>p.x.toFixed(3)+' '+p.y.toFixed(3)).join('L')+'Z';
+function bbox(P){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;P.forEach(p=>{x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);});return {x:x0,y:y0,w:x1-x0,h:y1-y0};}
+
+// ---------- Trazado ----------
+function rect(w,h,sa,fold){return [
+  {pts:[V(0,0),V(w,0)],sa},{pts:[V(w,0),V(w,h)],sa},{pts:[V(w,h),V(0,h)],sa},
+  {pts:[V(0,h),V(0,0)],sa:fold?0:sa,fold}];}
+
+function trazar(m){
+  const sa=m.margen, checks=[];
+  const W=(m.pecho+m.holgura)/4;
+  const hemW=Math.max(W,(m.cadera+8)/4);
+  const nw=m.cuello/6+m.escoteExtra;
+  const tee=m.prenda==='t';
+  const bd=2.5, fd=m.cuello/6+m.bajaEscote, slope=3.5;
+  const shL=m.hombro+m.caida;
+  const NP=V(nw,0), SP=V(nw+Math.sqrt(Math.max(shL*shL-slope*slope,1)),slope);
+  const sisa=m.pecho/8+9+m.bajaSisa;
+  const L=tee?m.largoTotal:m.largoTotal-m.rib, hemSa=tee?m.dobladillo:sa;
+  const u=norm(sub(SP,NP)), perp=V(-u.y,u.x);
+
+  function cuerpo(front){
+    const depth=front?fd:bd;
+    const neck=bez(V(0,depth),V(nw*0.5,depth),add(NP,mul(perp,depth*0.5)),NP);
+    const S=V(W,sisa);
+    const B=V(m.anchoEsp/2+m.caida+(front?0.5:1.5), SP.y+(sisa-SP.y)*(front?0.6:0.5));
+    const h1=(B.y-SP.y)*0.45, h2=(S.y-B.y)*0.55;
+    const a1=bez(SP,add(SP,mul(perp,h1)),V(B.x,B.y-h1),B);
+    const a2=bez(B,V(B.x,B.y+h2),V(B.x+(S.x-B.x)*0.35,S.y),S);
+    const arm=a1.concat(a2.slice(1));
+    const H=V(hemW,L);
+    return {neck,arm,edges:[
+      {pts:neck,sa},{pts:[NP,SP],sa},{pts:arm,sa},{pts:[S,H],sa},{pts:[H,V(0,L)],sa:hemSa},
+      {pts:[V(0,L),V(0,depth)],sa:0,fold:true}]};
+  }
+  const tra=cuerpo(false), del=cuerpo(true);
+  const ahB=plen(tra.arm), ahF=plen(del.arm);
+
+  // Manga: la copa se ajusta sola para medir igual que la sisa (+ embebido)
+  const capH=(ahB+ahF)*m.copa/100;
+  const capSide=(half,sign,front)=>{const P=V(sign*half,capH),k1=front?0.5:0.4,k2=front?0.42:0.5;
+    return bez(P,add(P,V(-sign*half*k1,0)),V(sign*half*k2,0),V(0,0));};
+  const bb=bisect(h=>plen(capSide(h,-1,false)),ahB+m.embebido/2,0.5,ahB+5);
+  const bf=bisect(h=>plen(capSide(h,1,true)),ahF+m.embebido/2,0.5,ahF+5);
+  const capB=capSide(bb,-1,false), capF=capSide(bf,1,true).slice().reverse();
+  let manga, mangaBoca;
+  if(tee){const sl=Math.max(m.mangaCorta,capH+3), hf=bf-1.5, hb=bb-1.5; mangaBoca=hf+hb;
+    manga={edges:[{pts:capB,sa},{pts:capF,sa},{pts:[V(bf,capH),V(hf,sl)],sa},
+      {pts:[V(hf,sl),V(-hb,sl)],sa:m.dobladillo},{pts:[V(-hb,sl),V(-bb,capH)],sa}]};
+  } else {const sl=m.manga-m.caida-m.rib, hw=m.bocaManga/2; mangaBoca=2*hw;
+    manga={edges:[{pts:capB,sa},{pts:capF,sa},{pts:[V(bf,capH),V(hw,sl)],sa},
+      {pts:[V(hw,sl),V(-hw,sl)],sa},{pts:[V(-hw,sl),V(-bb,capH)],sa}]};}
+
+  const neckHalf=plen(tra.neck)+plen(del.neck);
+  const base=[
+    {id:'tra',name:'Trasero',cut:'Cortar 1 al doblez',...tra},
+    {id:'del',name:'Delantero',cut:'Cortar 1 al doblez',...del},
+    {id:'man',name:'Manga',cut:'Cortar 2 (en espejo)',...manga,tags:[['Esp.',-bb*0.5,capH+3],['Del.',bf*0.5,capH+3]],
+      note:tee?'Ruedo: dobladillo '+m.dobladillo+' cm':null},
+  ];
+  base[0].note=base[1].note=tee?'Ruedo: dobladillo '+m.dobladillo+' cm':null;
+  let pieces, extraChecks=[];
+  if(tee){
+    const bandL=2*neckHalf*0.85;
+    pieces=base.concat([{id:'cue',name:'Cuello (rib)',cut:'Cortar 1 · doblar a lo largo',edges:rect(bandL,2*m.cuelloRib,sa,false),small:true}]);
+    extraChecks.push(['Escote completo / rib de cuello (85%)', (2*neckHalf).toFixed(1)+' / '+bandL.toFixed(1)+' cm', '']);
+  } else {
+  // Capucha
+  const Hh=m.capAlto;
+  const hoodNeck=bx=>bez(V(0,Hh),V(bx*0.45,Hh+1.2),V(bx*0.75,Hh-1.5),V(bx,Hh-4));
+  const hbx=bisect(b=>plen(hoodNeck(b)),neckHalf,1,neckHalf);
+  const Wh=hbx+m.capExtra, HB=V(hbx,Hh-4), HM=V(Wh,Hh*0.42), HT=V(Wh*0.5,0);
+  const back1=bez(HB,V(HB.x+(Wh-HB.x)*0.8,HB.y-1.5),V(Wh,HM.y+(HB.y-HM.y)*0.45),HM);
+  const back2=bez(HM,V(Wh,HM.y*0.4),V(HT.x+(Wh-HT.x)*0.55,0),HT);
+  const capucha={edges:[{pts:hoodNeck(hbx),sa},{pts:back1.concat(back2.slice(1)),sa},
+    {pts:[HT,V(0,0)],sa},{pts:[V(0,0),V(0,Hh)],sa:sa+2}]};
+
+  // Bolsillo canguro
+  const ph=20+(m.pecho-100)*0.1, bh=W*0.6, tw=bh-7, ho=ph*0.6;
+  const bolsillo={edges:[{pts:[V(0,0),V(tw,0)],sa},
+    {pts:bez(V(tw,0),V(tw+1,ho*0.6),V(bh-2.5,ho),V(bh,ho)),sa:sa+1},
+    {pts:[V(bh,ho),V(bh,ph)],sa},{pts:[V(bh,ph),V(0,ph)],sa},{pts:[V(0,ph),V(0,0)],sa:0,fold:true}]};
+
+  const puno={edges:rect(m.muneca+3,2*m.rib,sa,false)};
+  const pretW=(m.pecho+m.holgura)*0.85/2;
+  const pretina={edges:rect(pretW,2*m.rib,sa,true)};
+
+  pieces=base.concat([
+    {id:'cap',name:'Capucha',cut:'Cortar 2 (en espejo)',...capucha,note:'Borde frontal: dobladillo '+(sa+2)+' cm'},
+    {id:'bol',name:'Bolsillo canguro',cut:'Cortar 1 al doblez',...bolsillo,note:'Aberturas: dobladillo '+(sa+1)+' cm'},
+    {id:'pun',name:'Puño (rib)',cut:'Cortar 2 · doblar a lo largo',...puno,small:true},
+    {id:'pre',name:'Pretina (rib)',cut:'Cortar 1 al doblez · doblar a lo largo',...pretina,small:true},
+  ]);
+  extraChecks.push(['Escote cuerpo (mitad) / base capucha', neckHalf.toFixed(1)+' / '+plen(hoodNeck(hbx)).toFixed(1)+' cm', '<span class="ok">coinciden</span>']);
+  extraChecks.push(['Pretina rib (85% del contorno)', (pretW*2).toFixed(1)+' cm', '']);
+  }
+  pieces.forEach(p=>{const f=flatten(p.edges);p.stitch=f.P;p.cutline=offsetPoly(f.P,f.S);
+    p.bb=bbox(p.cutline);p.sb=bbox(p.stitch);});
+
+  const capLB=plen(capB), capLF=plen(capF), biceps=bb+bf;
+  const fmt=v=>v.toFixed(1)+' cm';
+  const okTxt=(c,t)=>`<span class="${c?'ok':'warn'}">${t}</span>`;
+  checks.push(['Contorno pecho prenda', fmt(m.pecho+m.holgura), '']);
+  checks.push(['Sisa trasera / delantera', fmt(ahB)+' / '+fmt(ahF), '']);
+  checks.push(['Copa manga trasera / delantera', fmt(capLB)+' / '+fmt(capLF),
+    okTxt(Math.abs(capLB+capLF-ahB-ahF-m.embebido)<0.3,'embebido '+(capLB+capLF-ahB-ahF).toFixed(2)+' cm')]);
+  checks.push(['Ancho de manga (bíceps)', fmt(biceps),
+    m.brazo? okTxt(biceps>=m.brazo+4,'brazo '+m.brazo+' + holgura '+(biceps-m.brazo).toFixed(1)) : 'sin medida de brazo']);
+  checks.push(['Altura de copa', fmt(capH), '']);
+  checks.push(['Boca de manga', fmt(mangaBoca), '']);
+  checks.push(['Costado trasero = delantero', fmt(L-sisa), okTxt(true,'coinciden')]);
+  checks.push(...extraChecks);
+  return {pieces,checks};
+}
+
+// ---------- Dibujo ----------
+function pieceSVG(p,talla){
+  const sb=p.sb, cx=sb.x+sb.w/2, fs=p.small?0.9:Math.min(1.4,Math.max(0.8,sb.h/28));
+  let s=`<path class="cut" d="${pathD(p.cutline)}"/><path class="stitch" d="${pathD(p.stitch)}"/>`;
+  p.edges.filter(e=>e.fold).forEach(e=>{const a=e.pts[0],b=e.pts[e.pts.length-1];
+    s+=`<line class="fold" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
+    const my=(a.y+b.y)/2;
+    s+=`<text class="lbl" font-size="${p.small?0.6:0.8}" transform="translate(${a.x+ (p.small?0.8:1.1)},${my}) rotate(-90)" text-anchor="middle">DOBLEZ</text>`;});
+  let ty=sb.y+sb.h*0.5;
+  if(!p.small){const gy0=sb.y+sb.h*0.18,gy1=sb.y+sb.h*0.4,gx=cx;
+    s+=`<path class="grain" d="M${gx} ${gy0}L${gx} ${gy1}M${gx-0.5} ${gy0+1}L${gx} ${gy0}L${gx+0.5} ${gy0+1}M${gx-0.5} ${gy1-1}L${gx} ${gy1}L${gx+0.5} ${gy1-1}"/>`;}
+  else ty=sb.y+sb.h*0.45;
+  const lines=[[p.name,fs*1.1,'700'],[p.cut,fs*0.65,'400'],['Talla '+talla+' · margen '+state.margen+' cm incluido',fs*0.5,'400']];
+  if(p.note)lines.push([p.note,fs*0.5,'400']);
+  lines.forEach(([t,f,w])=>{s+=`<text class="lbl" x="${cx}" y="${ty}" font-size="${f}" font-weight="${w}" text-anchor="middle">${t}</text>`;ty+=f*1.4;});
+  (p.tags||[]).forEach(([t,x,y])=>{s+=`<text class="lbl" x="${x}" y="${y}" font-size="0.8" text-anchor="middle">${t}</text>`;});
+  return s;
+}
+
+function layout(pieces,maxW=125,gap=3){
+  let x=0,y=0,rowH=0;const pos={};
+  pieces.forEach(p=>{if(x>0&&x+p.bb.w>maxW){x=0;y+=rowH+gap;rowH=0;}
+    pos[p.id]={dx:x-p.bb.x,dy:y-p.bb.y};x+=p.bb.w+gap;rowH=Math.max(rowH,p.bb.h);});
+  return {pos,W:maxW,H:y+rowH};
+}
+
+// ---------- App ----------
+let state={}, result=null;
+const tallaLabel=()=>document.getElementById('talla').selectedOptions[0]?.text||'—';
+const prenda=()=>document.getElementById('prenda').value;
+const prendaLabel=()=>prenda()==='t'?'Camiseta':'Hoodie';
+
+function buildForm(){
+  const f=document.getElementById('form');let h='';
+  CAMPOS.forEach(c=>{if(c.g){h+=`<h2>${c.g}</h2>`;return;}
+    h+=`<div class="row" id="row_${c.k}"><label for="f_${c.k}">${c.l}</label><input id="f_${c.k}" type="number" step="0.5"></div>`;});
+  f.innerHTML=h;
+  CAMPOS.forEach(c=>{if(c.k)document.getElementById('f_'+c.k).addEventListener('input',render);});
+}
+function applyPrenda(){
+  const p=prenda();
+  document.getElementById('titulo').textContent=prendaLabel();
+  CAMPOS.forEach(c=>{if(!c.k)return;
+    document.getElementById('row_'+c.k).style.display=(c.only&&c.only!==p)?'none':'';
+    if(c.d&&c.d[p]!==undefined)document.getElementById('f_'+c.k).value=c.d[p];});
+  applySize();
+}
+function fillTallas(){const t=TABLAS[document.getElementById('tabla').value];
+  document.getElementById('talla').innerHTML=t.nombres.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+  document.getElementById('talla').value=Math.min(5,t.nombres.length-1);}
+function applySize(){const t=TABLAS[document.getElementById('tabla').value],i=+document.getElementById('talla').value;
+  ['pecho','cintura','cadera','largoEsp','anchoEsp','cuello','hombro','manga','brazo','muneca'].forEach(k=>{
+    document.getElementById('f_'+k).value=t[k][i]??'';});
+  document.getElementById('f_largoTotal').value=t.largoEsp[i]+(prenda()==='t'?25:22);
+  document.getElementById('f_bocaManga').value=t.muneca[i]+8;
+  document.getElementById('f_capAlto').value=Math.round((31+t.pecho[i]/30)*2)/2;
+  render();}
+function read(){const m={prenda:prenda()};CAMPOS.forEach(c=>{if(c.k){const v=parseFloat(document.getElementById('f_'+c.k).value);m[c.k]=isNaN(v)?(c.k==='brazo'?null:0):v;}});return m;}
+
+function render(){
+  state=read();
+  try{result=trazar(state);}catch(e){document.getElementById('preview').innerHTML='<p class="warn">Medidas inválidas: '+e.message+'</p>';return;}
+  const {pieces,checks}=result, L=layout(pieces);
+  let s=`<svg viewBox="-1 -3 ${L.W+2} ${L.H+4}" xmlns="http://www.w3.org/2000/svg">`;
+  s+=`<g><line x1="0" y1="-1.5" x2="10" y2="-1.5" stroke="#000" stroke-width=".1"/><text class="lbl" x="11" y="-1.1" font-size="1">10 cm</text></g>`;
+  pieces.forEach(p=>{const o=L.pos[p.id];s+=`<g transform="translate(${o.dx},${o.dy})">${pieceSVG(p,tallaLabel())}</g>`;});
+  document.getElementById('preview').innerHTML=s+'</svg>';
+  document.getElementById('checks').innerHTML='<b>Verificaciones</b><table>'+checks.map(c=>`<tr><td>${c[0]}</td><td class="v">${c[1]}</td><td>${c[2]}</td></tr>`).join('')+'</table>';
+  const sel=document.getElementById('sel'), prev={};
+  sel.querySelectorAll('input').forEach(i=>prev[i.value]=i.checked);
+  sel.innerHTML=pieces.map(p=>`<label><input type="checkbox" value="${p.id}" ${prev[p.id]===false?'':'checked'}> ${p.name}</label>`).join('');
+}
+
+// ---------- Impresión 1:1 por hojas ----------
+function imprimir(papel){
+  const P=papel==='a4'?{w:21,h:29.7}:{w:21.59,h:27.94}, mg=1, tw=P.w-2*mg, th=P.h-2*mg;
+  document.getElementById('pagestyle').textContent=`@page { size: ${P.w}cm ${P.h}cm; margin: ${mg}cm; }`;
+  const ids=[...document.querySelectorAll('#sel input:checked')].map(i=>i.value);
+  const pcs=result.pieces.filter(p=>ids.includes(p.id));
+  let pages='', resumen=[];
+  pcs.forEach(p=>{const b=p.bb,pad=0.5,x0=b.x-pad,y0=b.y-pad,W=b.w+2*pad,H=b.h+2*pad;
+    const cols=Math.ceil(W/tw),rows=Math.ceil(H/th);resumen.push(`${p.name}: ${rows}×${cols} = ${rows*cols} hojas`);
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const vx=x0+c*tw,vy=y0+r*th;
+      pages+=`<div class="page" style="width:${tw}cm;height:${th}cm"><svg xmlns="http://www.w3.org/2000/svg" width="${tw}cm" height="${th}cm" viewBox="${vx} ${vy} ${tw} ${th}">
+        ${pieceSVG(p,tallaLabel())}
+        <rect x="${vx}" y="${vy}" width="${tw}" height="${th}" fill="none" stroke="#999" stroke-width=".02"/>
+        <text class="lbl" x="${vx+0.3}" y="${vy+0.6}" font-size="0.4">${p.name} · fila ${r+1}/${rows} · columna ${c+1}/${cols}</text>
+      </svg></div>`;}});
+  const med=['pecho','cintura','cadera','largoEsp','anchoEsp','cuello','hombro','manga','muneca','largoTotal','holgura'].map(k=>`${CAMPOS.find(c=>c.k===k).l}: ${state[k]}`).join(' · ');
+  const portada=`<div class="page" style="width:${tw}cm;height:${th}cm;font-family:system-ui;font-size:11pt">
+    <h2 style="margin:0 0 .3cm">${prendaLabel()} · Talla ${tallaLabel()}</h2>
+    <p style="font-size:9pt">${med}</p>
+    <p><b>Antes de imprimir todo:</b> mide este cuadro. Debe medir exactamente 10 × 10 cm. Si no, en el diálogo de impresión pon escala <b>100% / Tamaño real</b> (no “Ajustar a página”).</p>
+    <div style="width:10cm;height:10cm;border:1px solid #000;display:flex;align-items:center;justify-content:center">10 × 10 cm</div>
+    <p>Une las hojas por fila y columna (están rotuladas en la esquina) recortando o empalmando sobre el borde gris.</p>
+    <ul style="font-size:10pt">${resumen.map(r=>'<li>'+r+'</li>').join('')}</ul></div>`;
+  document.getElementById('print').innerHTML=portada+pages;
+  setTimeout(()=>window.print(),100);
+}
+
+function descargarSVG(){
+  const L=layout(result.pieces);
+  const css=document.querySelector('style:not(#pagestyle)').textContent.match(/\.cut[\s\S]*?\.lbl \{[^}]*\}/)[0].replace('var(--piece)','none');
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${L.W+2}cm" height="${L.H+2}cm" viewBox="-1 -1 ${L.W+2} ${L.H+2}"><style>${css}</style>`;
+  result.pieces.forEach(p=>{const o=L.pos[p.id];s+=`<g transform="translate(${o.dx},${o.dy})">${pieceSVG(p,tallaLabel())}</g>`;});
+  s+='</svg>';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'}));
+  a.download=`${prendaLabel().toLowerCase()}_${tallaLabel()}.svg`;a.click();
+}
+
+buildForm();fillTallas();
+document.getElementById('prenda').addEventListener('change',applyPrenda);
+document.getElementById('tabla').addEventListener('change',()=>{fillTallas();applySize();});
+document.getElementById('talla').addEventListener('change',applySize);
+applyPrenda();
+</script>
+</body>
+</html>
